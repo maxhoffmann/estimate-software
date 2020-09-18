@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, style, value)
+import Html.Attributes exposing (class, maxlength, style, value)
 import Html.Events exposing (onClick, onInput)
 import List.Extra exposing (getAt, setAt)
 
@@ -98,7 +98,15 @@ updateDescription path description tasks =
                     case item of
                         Task oldDescription subtasks ->
                             if List.length restOfPath > 0 then
-                                setAt index (Task oldDescription (updateDescription restOfPath description subtasks)) tasks
+                                setAt index
+                                    (Task oldDescription
+                                        (updateDescription
+                                            restOfPath
+                                            description
+                                            subtasks
+                                        )
+                                    )
+                                    tasks
 
                             else
                                 setAt index (Task description subtasks) tasks
@@ -126,13 +134,27 @@ updateEstimate path estimate tasks =
                     case item of
                         Task description subtasks ->
                             if List.length restOfPath > 0 then
-                                setAt index (Task description (updateEstimate restOfPath estimate subtasks)) tasks
+                                setAt index
+                                    (Task description
+                                        (updateEstimate
+                                            restOfPath
+                                            estimate
+                                            subtasks
+                                        )
+                                    )
+                                    tasks
 
                             else
                                 tasks
 
                         Subtask description _ ->
-                            setAt index (Subtask description (String.toInt estimate |> Maybe.withDefault 0)) tasks
+                            setAt index
+                                (Subtask description
+                                    (String.toInt estimate
+                                        |> Maybe.withDefault 0
+                                    )
+                                )
+                                tasks
 
                 Nothing ->
                     tasks
@@ -155,11 +177,16 @@ view model =
                     |> List.indexedMap (taskView [] model.tasks)
                 )
             , if List.length model.tasks == 0 then
-                Html.button [ class "add", onClick (AddTask [ 0 ]) ] [ text "add task" ]
+                Html.button
+                    [ class "add"
+                    , onClick (AddTask [ 0 ])
+                    , style "cursor" "pointer"
+                    ]
+                    [ text "add" ]
 
               else
                 text ""
-            , Html.div [] [ text ("Sum: " ++ String.fromInt (sumTasks model.tasks)) ]
+            , Html.div [ style "border-top" "2px dashed lightgray", style "padding-top" "5px" ] [ text ("Sum: " ++ String.fromInt (sumTasks model.tasks)) ]
             ]
         ]
     }
@@ -169,43 +196,100 @@ taskView : List Int -> List Item -> Int -> Item -> Html Msg
 taskView path parentTasks index item =
     case item of
         Subtask description days ->
-            Html.li [ class "task" ]
+            Html.li [ style "margin-bottom" "10px" ]
                 [ Html.div []
                     [ Html.button
-                        [ style "border-radius" "100%"
-                        , style "border" "1px solid black"
+                        [ style "border" "1px solid black"
                         , style "width" "21px"
                         , style "height" "21px"
                         , onClick (AddTask (path ++ [ index, 0 ]))
+                        , style "cursor" "pointer"
                         ]
                         [ text "+" ]
-                    , Html.input [ value (String.fromInt days), onInput (UpdateEstimate (path ++ [ index ])) ] []
-                    , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
+                    , Html.input
+                        [ value (String.fromInt days)
+                        , onInput
+                            (UpdateEstimate (path ++ [ index ]))
+                        , maxlength 3
+                        , style "border" "0"
+                        , style "font-family" "monospace"
+                        , style "width" "30px"
+                        , style "text-align" "center"
+                        , style "padding" "0"
+                        ]
+                        []
+                    , Html.input
+                        [ value description
+                        , onInput
+                            (UpdateDescription (path ++ [ index ]))
+                        , style "border" "0"
+                        ]
+                        []
                     ]
                 , if List.length parentTasks == index + 1 then
-                    Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
+                    Html.button
+                        [ style "margin-top" "10px"
+                        , style "cursor" "pointer"
+                        , onClick
+                            (AddTask
+                                (path ++ [ index ])
+                            )
+                        ]
+                        [ text "add" ]
 
                   else
                     text ""
                 ]
 
         Task description subtasks ->
-            Html.li [ class "task" ]
+            Html.li [ style "margin-bottom" "20px" ]
                 [ Html.div []
                     [ Html.button
-                        [ style "border-radius" "100%"
-                        , style "border" "1px solid black"
+                        [ style "border" "1px solid black"
                         , style "width" "21px"
                         , style "height" "21px"
+                        , style "cursor" "pointer"
                         , onClick (AddTask (path ++ [ index, 0 ]))
                         ]
                         [ text "+" ]
-                    , Html.code [] [ text <| String.fromInt <| sumTasks subtasks ]
-                    , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
+                    , Html.code
+                        [ style "display" "inline-block"
+                        , style "font-family" "monospace"
+                        , style "width" "20px"
+                        , style "text-align" "center"
+                        , style "background-color" "lightgray"
+                        , style "border-radius" "100%"
+                        , style "cursor" "default"
+                        , style "margin" "0 5px"
+                        ]
+                        [ text <| String.fromInt <| sumTasks subtasks ]
+                    , Html.input
+                        [ value description
+                        , onInput
+                            (UpdateDescription
+                                (path ++ [ index ])
+                            )
+                        , style "border" "0"
+                        ]
+                        []
                     ]
-                , Html.ul [ style "list-style" "none" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
+                , Html.ul
+                    [ style "list-style" "none"
+                    , style "margin-top" "10px"
+                    , style "padding-left" "22px"
+                    ]
+                  <|
+                    List.indexedMap
+                        (taskView (path ++ [ index ]) subtasks)
+                        subtasks
                 , if List.length parentTasks == index + 1 then
-                    Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
+                    Html.button
+                        [ class "add"
+                        , onClick
+                            (AddTask (path ++ [ index ]))
+                        , style "cursor" "pointer"
+                        ]
+                        [ text "add" ]
 
                   else
                     text ""
