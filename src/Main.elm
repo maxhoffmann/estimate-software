@@ -112,9 +112,10 @@ taskView : List Int -> Tasks -> Int -> Task -> Html Msg
 taskView path parentTasks index (Task description days tasks) =
     Html.li [ class "task" ]
         [ Html.span [] [ text (description ++ " " ++ String.fromInt days) ]
+        , Html.button [ class "add", onClick (AddTask (path ++ [ index, 0 ])) ] [ text "+" ]
         , Html.ul [ class "subtasks" ] <| List.indexedMap (taskView (path ++ [ index ]) tasks) tasks
         , if List.length parentTasks == index + 1 then
-            Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add" ]
+            Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
 
           else
             text ""
