@@ -24,11 +24,7 @@ type Item
 init : flags -> ( Model, Cmd Msg )
 init _ =
     ( { tasks =
-            [ Task "Test"
-                [ Subtask "subtask" 2
-                , Subtask "another" 1
-                ]
-            ]
+            [ Subtask "task" 1 ]
       }
     , Cmd.none
     )
@@ -47,7 +43,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "msg" msg of
+    case msg of
         NoOp ->
             ( model, Cmd.none )
 
@@ -70,7 +66,7 @@ addTask path tasks =
                     getAt index tasks
             in
             if List.length restOfPath == 0 then
-                tasks ++ [ Subtask "new task" 1 ]
+                tasks ++ [ Subtask "task" 1 ]
 
             else
                 case taskAtIndex of
@@ -80,7 +76,7 @@ addTask path tasks =
                                 setAt index (Task desc (addTask restOfPath subtasks)) tasks
 
                             Subtask description estimate ->
-                                setAt index (Task description [ Subtask "new subtask" estimate ]) tasks
+                                setAt index (Task description [ Subtask "task" estimate ]) tasks
 
                     Nothing ->
                         tasks
@@ -158,7 +154,12 @@ view model =
                 (model.tasks
                     |> List.indexedMap (taskView [] model.tasks)
                 )
-            , text ("Sum: " ++ String.fromInt (sumTasks model.tasks))
+            , if List.length model.tasks == 0 then
+                Html.button [ class "add", onClick (AddTask [ 0 ]) ] [ text "add task" ]
+
+              else
+                text ""
+            , Html.div [] [ text ("Sum: " ++ String.fromInt (sumTasks model.tasks)) ]
             ]
         ]
     }
