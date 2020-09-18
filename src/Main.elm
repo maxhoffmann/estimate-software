@@ -24,7 +24,7 @@ type Item
 init : flags -> ( Model, Cmd Msg )
 init _ =
     ( { tasks =
-            [ Subtask "task" 1 ]
+            [ Subtask "description" 1 ]
       }
     , Cmd.none
     )
@@ -66,7 +66,7 @@ addTask path tasks =
                     getAt index tasks
             in
             if List.length restOfPath == 0 then
-                tasks ++ [ Subtask "task" 1 ]
+                tasks ++ [ Subtask "description" 1 ]
 
             else
                 case taskAtIndex of
@@ -76,7 +76,7 @@ addTask path tasks =
                                 setAt index (Task desc (addTask restOfPath subtasks)) tasks
 
                             Subtask description estimate ->
-                                setAt index (Task description [ Subtask "task" estimate ]) tasks
+                                setAt index (Task description [ Subtask "description" estimate ]) tasks
 
                     Nothing ->
                         tasks
@@ -171,7 +171,7 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Estimates"
     , body =
-        [ Html.main_ [ class "app" ]
+        [ Html.main_ [ style "margin" "40px" ]
             [ Html.ul [ style "list-style" "none", style "padding" "0" ] <|
                 (model.tasks
                     |> List.indexedMap (taskView [] model.tasks)
