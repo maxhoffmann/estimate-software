@@ -4,7 +4,7 @@ import Browser
 import Html exposing (Html, text)
 import Html.Attributes exposing (class, maxlength, style, value)
 import Html.Events exposing (onClick, onInput)
-import List.Extra exposing (getAt, setAt)
+import List.Extra exposing (getAt, removeAt, setAt)
 
 
 
@@ -35,8 +35,8 @@ init _ =
 
 
 type Msg
-    = NoOp
-    | AddTask (List Int)
+    = AddItem (List Int)
+    | RemoveItem (List Int)
     | UpdateDescription (List Int) String
     | UpdateEstimate (List Int) String
 
@@ -44,11 +44,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
+        AddItem path ->
+            ( { model | tasks = addItem path model.tasks }, Cmd.none )
 
-        AddTask path ->
-            ( { model | tasks = addTask path model.tasks }, Cmd.none )
+        RemoveItem path ->
+            ( { model | tasks = removeItem path model.tasks }, Cmd.none )
 
         UpdateDescription path string ->
             ( { model | tasks = updateDescription path string model.tasks }, Cmd.none )
@@ -57,8 +57,8 @@ update msg model =
             ( { model | tasks = updateEstimate path string model.tasks }, Cmd.none )
 
 
-addTask : List Int -> List Item -> List Item
-addTask path tasks =
+addItem : List Int -> List Item -> List Item
+addItem path tasks =
     case path of
         index :: restOfPath ->
             let
@@ -73,13 +73,48 @@ addTask path tasks =
                     Just item ->
                         case item of
                             Task desc subtasks ->
-                                setAt index (Task desc (addTask restOfPath subtasks)) tasks
+                                setAt index (Task desc (addItem restOfPath subtasks)) tasks
 
                             Subtask description estimate ->
                                 setAt index (Task description [ Subtask "description" estimate ]) tasks
 
                     Nothing ->
                         tasks
+
+        [] ->
+            tasks
+
+
+removeItem : List Int -> List Item -> List Item
+removeItem path tasks =
+    case path of
+        index :: restOfPath ->
+            let
+                itemAtIndex =
+                    getAt index tasks
+            in
+            case itemAtIndex of
+                Just item ->
+                    case item of
+                        Task oldDescription subtasks ->
+                            if List.length restOfPath > 0 then
+                                setAt index
+                                    (Task oldDescription
+                                        (removeItem
+                                            restOfPath
+                                            subtasks
+                                        )
+                                    )
+                                    tasks
+
+                            else
+                                setAt index (Subtask oldDescription (sumTasks subtasks)) tasks
+
+                        Subtask _ _ ->
+                            removeAt index tasks
+
+                Nothing ->
+                    tasks
 
         [] ->
             tasks
@@ -179,7 +214,7 @@ view model =
             , if List.length model.tasks == 0 then
                 Html.button
                     [ class "add"
-                    , onClick (AddTask [ 0 ])
+                    , onClick (AddItem [ 0 ])
                     , style "cursor" "pointer"
                     ]
                     [ text "add" ]
@@ -202,7 +237,15 @@ taskView path parentTasks index item =
                         [ style "border" "1px solid black"
                         , style "width" "21px"
                         , style "height" "21px"
-                        , onClick (AddTask (path ++ [ index, 0 ]))
+                        , onClick (RemoveItem (path ++ [ index, 0 ]))
+                        , style "cursor" "pointer"
+                        ]
+                        [ text "-" ]
+                    , Html.button
+                        [ style "border" "1px solid black"
+                        , style "width" "21px"
+                        , style "height" "21px"
+                        , onClick (AddItem (path ++ [ index, 0 ]))
                         , style "cursor" "pointer"
                         ]
                         [ text "+" ]
@@ -231,7 +274,7 @@ taskView path parentTasks index item =
                         [ style "margin-top" "10px"
                         , style "cursor" "pointer"
                         , onClick
-                            (AddTask
+                            (AddItem
                                 (path ++ [ index ])
                             )
                         ]
@@ -248,8 +291,16 @@ taskView path parentTasks index item =
                         [ style "border" "1px solid black"
                         , style "width" "21px"
                         , style "height" "21px"
+                        , onClick (RemoveItem (path ++ [ index ]))
                         , style "cursor" "pointer"
-                        , onClick (AddTask (path ++ [ index, 0 ]))
+                        ]
+                        [ text "-" ]
+                    , Html.button
+                        [ style "border" "1px solid black"
+                        , style "width" "21px"
+                        , style "height" "21px"
+                        , style "cursor" "pointer"
+                        , onClick (AddItem (path ++ [ index, 0 ]))
                         ]
                         [ text "+" ]
                     , Html.code
@@ -286,7 +337,7 @@ taskView path parentTasks index item =
                     Html.button
                         [ class "add"
                         , onClick
-                            (AddTask (path ++ [ index ]))
+                            (AddItem (path ++ [ index ]))
                         , style "cursor" "pointer"
                         ]
                         [ text "add" ]
@@ -296,6 +347,7 @@ taskView path parentTasks index item =
                 ]
 
 
+sumTasks : List Item -> Int
 sumTasks items =
     List.foldl
         (\item sum ->
