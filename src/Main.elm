@@ -181,7 +181,6 @@ taskView path parentTasks index item =
                         [ text "+" ]
                     , Html.input [ value (String.fromInt days), onInput (UpdateEstimate (path ++ [ index ])) ] []
                     , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
-                    , text (String.fromInt index)
                     ]
                 , if List.length parentTasks == index + 1 then
                     Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
@@ -203,7 +202,6 @@ taskView path parentTasks index item =
                         [ text "+" ]
                     , Html.code [] [ text <| String.fromInt <| sumTasks subtasks ]
                     , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
-                    , text (String.fromInt index)
                     ]
                 , Html.ul [ style "list-style" "none" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
                 , if List.length parentTasks == index + 1 then
