@@ -62,7 +62,7 @@ addTask path tasks =
                     getAt index tasks
             in
             if List.length restOfPath == 0 then
-                tasks ++ [ Subtask "new task" 0 ]
+                tasks ++ [ Subtask "new task" 1 ]
 
             else
                 case taskAtIndex of
@@ -94,6 +94,7 @@ view model =
                 (model.tasks
                     |> List.indexedMap (taskView [] model.tasks)
                 )
+            , text ("Sum: " ++ String.fromInt (sumTasks model.tasks))
             ]
         ]
     }
@@ -125,15 +126,18 @@ taskView path parentTasks index item =
 
         Task description subtasks ->
             Html.li [ class "task" ]
-                [ Html.span [] [ text description ]
-                , Html.button
-                    [ style "border-radius" "100%"
-                    , style "border" "1px solid black"
-                    , style "width" "21px"
-                    , style "height" "21px"
-                    , onClick (AddTask (path ++ [ index, 0 ]))
+                [ Html.div []
+                    [ Html.span [] [ text description ]
+                    , Html.code [] [ text <| String.fromInt <| sumTasks subtasks ]
+                    , Html.button
+                        [ style "border-radius" "100%"
+                        , style "border" "1px solid black"
+                        , style "width" "21px"
+                        , style "height" "21px"
+                        , onClick (AddTask (path ++ [ index, 0 ]))
+                        ]
+                        [ text "+" ]
                     ]
-                    [ text "+" ]
                 , Html.ul [ class "subtasks" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
                 , if List.length parentTasks == index + 1 then
                     Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
@@ -141,6 +145,20 @@ taskView path parentTasks index item =
                   else
                     text ""
                 ]
+
+
+sumTasks items =
+    List.foldl
+        (\item sum ->
+            case item of
+                Subtask _ estimate ->
+                    sum + estimate
+
+                Task _ subtasks ->
+                    sum + sumTasks subtasks
+        )
+        0
+        items
 
 
 
