@@ -2,8 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, style, value)
+import Html.Events exposing (onClick, onInput)
 import List.Extra exposing (getAt, setAt)
 
 
@@ -24,7 +24,7 @@ type Item
 init : flags -> ( Model, Cmd Msg )
 init _ =
     ( { tasks =
-            [ Task "test"
+            [ Task "Test"
                 [ Subtask "subtask" 2
                 , Subtask "another" 1
                 ]
@@ -41,6 +41,8 @@ init _ =
 type Msg
     = NoOp
     | AddTask (List Int)
+    | UpdateDescription (List Int) String
+    | UpdateEstimate (List Int) String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -51,6 +53,12 @@ update msg model =
 
         AddTask path ->
             ( { model | tasks = addTask path model.tasks }, Cmd.none )
+
+        UpdateDescription path string ->
+            ( { model | tasks = updateDescription path string model.tasks }, Cmd.none )
+
+        UpdateEstimate path string ->
+            ( { model | tasks = updateEstimate path string model.tasks }, Cmd.none )
 
 
 addTask : List Int -> List Item -> List Item
@@ -81,6 +89,62 @@ addTask path tasks =
             tasks
 
 
+updateDescription : List Int -> String -> List Item -> List Item
+updateDescription path description tasks =
+    case path of
+        index :: restOfPath ->
+            let
+                itemAtIndex =
+                    getAt index tasks
+            in
+            case itemAtIndex of
+                Just item ->
+                    case item of
+                        Task oldDescription subtasks ->
+                            if List.length restOfPath > 0 then
+                                setAt index (Task oldDescription (updateDescription restOfPath description subtasks)) tasks
+
+                            else
+                                setAt index (Task description subtasks) tasks
+
+                        Subtask _ estimate ->
+                            setAt index (Subtask description estimate) tasks
+
+                Nothing ->
+                    tasks
+
+        [] ->
+            tasks
+
+
+updateEstimate : List Int -> String -> List Item -> List Item
+updateEstimate path estimate tasks =
+    case path of
+        index :: restOfPath ->
+            let
+                itemAtIndex =
+                    getAt index tasks
+            in
+            case itemAtIndex of
+                Just item ->
+                    case item of
+                        Task description subtasks ->
+                            if List.length restOfPath > 0 then
+                                setAt index (Task description (updateEstimate restOfPath estimate subtasks)) tasks
+
+                            else
+                                tasks
+
+                        Subtask description _ ->
+                            setAt index (Subtask description (String.toInt estimate |> Maybe.withDefault 0)) tasks
+
+                Nothing ->
+                    tasks
+
+        [] ->
+            tasks
+
+
 
 -- View
 
@@ -90,7 +154,7 @@ view model =
     { title = "Estimates"
     , body =
         [ Html.main_ [ class "app" ]
-            [ Html.ul [ class "list" ] <|
+            [ Html.ul [ style "list-style" "none", style "padding" "0" ] <|
                 (model.tasks
                     |> List.indexedMap (taskView [] model.tasks)
                 )
@@ -106,9 +170,7 @@ taskView path parentTasks index item =
         Subtask description days ->
             Html.li [ class "task" ]
                 [ Html.div []
-                    [ Html.span [] [ text description ]
-                    , Html.code [] [ text (String.fromInt days) ]
-                    , Html.button
+                    [ Html.button
                         [ style "border-radius" "100%"
                         , style "border" "1px solid black"
                         , style "width" "21px"
@@ -116,6 +178,9 @@ taskView path parentTasks index item =
                         , onClick (AddTask (path ++ [ index, 0 ]))
                         ]
                         [ text "+" ]
+                    , Html.input [ value (String.fromInt days), onInput (UpdateEstimate (path ++ [ index ])) ] []
+                    , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
+                    , text (String.fromInt index)
                     ]
                 , if List.length parentTasks == index + 1 then
                     Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
@@ -127,9 +192,7 @@ taskView path parentTasks index item =
         Task description subtasks ->
             Html.li [ class "task" ]
                 [ Html.div []
-                    [ Html.span [] [ text description ]
-                    , Html.code [] [ text <| String.fromInt <| sumTasks subtasks ]
-                    , Html.button
+                    [ Html.button
                         [ style "border-radius" "100%"
                         , style "border" "1px solid black"
                         , style "width" "21px"
@@ -137,8 +200,11 @@ taskView path parentTasks index item =
                         , onClick (AddTask (path ++ [ index, 0 ]))
                         ]
                         [ text "+" ]
+                    , Html.code [] [ text <| String.fromInt <| sumTasks subtasks ]
+                    , Html.input [ value description, onInput (UpdateDescription (path ++ [ index ])) ] []
+                    , text (String.fromInt index)
                     ]
-                , Html.ul [ class "subtasks" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
+                , Html.ul [ style "list-style" "none" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
                 , if List.length parentTasks == index + 1 then
                     Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
 
