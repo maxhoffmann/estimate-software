@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, text)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import List.Extra exposing (getAt, setAt)
 
@@ -12,29 +12,21 @@ import List.Extra exposing (getAt, setAt)
 
 
 type alias Model =
-    { tasks : Tasks
+    { tasks : List Item
     }
 
 
-type alias Days =
-    Int
-
-
-type Task
-    = Task String Days Tasks
-
-
-type alias Tasks =
-    List Task
+type Item
+    = Task String (List Item)
+    | Subtask String Int
 
 
 init : flags -> ( Model, Cmd Msg )
 init _ =
     ( { tasks =
             [ Task "test"
-                3
-                [ Task "subtask" 2 []
-                , Task "another" 1 []
+                [ Subtask "subtask" 2
+                , Subtask "another" 1
                 ]
             ]
       }
@@ -61,7 +53,7 @@ update msg model =
             ( { model | tasks = addTask path model.tasks }, Cmd.none )
 
 
-addTask : List Int -> Tasks -> Tasks
+addTask : List Int -> List Item -> List Item
 addTask path tasks =
     case Debug.log "path" path of
         index :: restOfPath ->
@@ -76,12 +68,17 @@ addTask path tasks =
                     Debug.log "index" index
             in
             if List.length restOfPath == 0 then
-                tasks ++ [ Task "new task" 0 [] ]
+                tasks ++ [ Subtask "new task" 0 ]
 
             else
                 case taskAtIndex of
-                    Just (Task desc estimate subtasks) ->
-                        setAt index (Task desc estimate (addTask restOfPath subtasks)) tasks
+                    Just item ->
+                        case item of
+                            Task desc subtasks ->
+                                setAt index (Task desc (addTask restOfPath subtasks)) tasks
+
+                            Subtask description estimate ->
+                                setAt index (Task description [ Subtask "new subtask" estimate ]) tasks
 
                     Nothing ->
                         tasks
@@ -108,18 +105,48 @@ view model =
     }
 
 
-taskView : List Int -> Tasks -> Int -> Task -> Html Msg
-taskView path parentTasks index (Task description days tasks) =
-    Html.li [ class "task" ]
-        [ Html.span [] [ text (description ++ " " ++ String.fromInt days) ]
-        , Html.button [ class "add", onClick (AddTask (path ++ [ index, 0 ])) ] [ text "+" ]
-        , Html.ul [ class "subtasks" ] <| List.indexedMap (taskView (path ++ [ index ]) tasks) tasks
-        , if List.length parentTasks == index + 1 then
-            Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
+taskView : List Int -> List Item -> Int -> Item -> Html Msg
+taskView path parentTasks index item =
+    case item of
+        Subtask description days ->
+            Html.li [ class "task" ]
+                [ Html.div []
+                    [ Html.span [] [ text description ]
+                    , Html.code [] [ text (String.fromInt days) ]
+                    , Html.button
+                        [ style "border-radius" "100%"
+                        , style "border" "1px solid black"
+                        , style "width" "21px"
+                        , style "height" "21px"
+                        , onClick (AddTask (path ++ [ index, 0 ]))
+                        ]
+                        [ text "+" ]
+                    ]
+                , if List.length parentTasks == index + 1 then
+                    Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
 
-          else
-            text ""
-        ]
+                  else
+                    text ""
+                ]
+
+        Task description subtasks ->
+            Html.li [ class "task" ]
+                [ Html.span [] [ text description ]
+                , Html.button
+                    [ style "border-radius" "100%"
+                    , style "border" "1px solid black"
+                    , style "width" "21px"
+                    , style "height" "21px"
+                    , onClick (AddTask (path ++ [ index, 0 ]))
+                    ]
+                    [ text "+" ]
+                , Html.ul [ class "subtasks" ] <| List.indexedMap (taskView (path ++ [ index ]) subtasks) subtasks
+                , if List.length parentTasks == index + 1 then
+                    Html.button [ class "add", onClick (AddTask (path ++ [ index ])) ] [ text "add task" ]
+
+                  else
+                    text ""
+                ]
 
 
 
