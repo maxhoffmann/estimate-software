@@ -55,17 +55,11 @@ update msg model =
 
 addTask : List Int -> List Item -> List Item
 addTask path tasks =
-    case Debug.log "path" path of
+    case path of
         index :: restOfPath ->
             let
                 taskAtIndex =
                     getAt index tasks
-
-                _ =
-                    Debug.log "task" taskAtIndex
-
-                _ =
-                    Debug.log "index" index
             in
             if List.length restOfPath == 0 then
                 tasks ++ [ Subtask "new task" 0 ]
