@@ -1,0 +1,62 @@
+* {
+  box-sizing: border-box;
+}
+
+.main {
+  margin: 40px;
+}
+
+.top-level {
+  list-style: none;
+  padding: 0;
+}
+
+.button {
+  width: 21px;
+  height: 21px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.button-add {
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.estimate {
+  border: 0;
+  font-family: monospace;
+  width: 30px;
+  text-align: center;
+  padding: 0;
+}
+
+.description {
+  border: 0;
+}
+
+.subtask {
+  margin-bottom: 10px;
+}
+
+.sum-subtasks {
+  display: inline-block;
+  font-family: monospace;
+  width: 20px;
+  text-align: center;
+  background-color: lightgray;
+  border-radius: 100%;
+  cursor: default;
+  margin: 0 5px;
+}
+
+.sum {
+  border-top: 2px dashed lightgray;
+  padding-top: 5px;
+}
+
+.ul {
+  list-style: none;
+  margin-top: 10px;
+  padding-left: 22px;
+}

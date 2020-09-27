@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, maxlength, style, value)
+import Html.Attributes exposing (class, maxlength, value)
 import Html.Events exposing (onClick, onInput)
 import List.Extra exposing (getAt, removeAt, setAt)
 
@@ -99,7 +99,7 @@ removeItem path tasks =
                         Task oldDescription subtasks ->
                             if List.length restOfPath > 0 then
                                 -- convert Task to Subtask if last subtask is deleted
-                                if List.length restOfPath == 2 && List.length subtasks == 1 then
+                                if List.length restOfPath == 1 && List.length subtasks == 1 then
                                     setAt index
                                         (Subtask oldDescription
                                             (sumTasks subtasks)
@@ -215,22 +215,21 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Estimates"
     , body =
-        [ Html.main_ [ style "margin" "40px" ]
-            [ Html.ul [ style "list-style" "none", style "padding" "0" ] <|
+        [ Html.main_ [ class "main" ]
+            [ Html.ul [ class "top-level" ] <|
                 (model.tasks
                     |> List.indexedMap (taskView [] model.tasks)
                 )
             , if List.length model.tasks == 0 then
                 Html.button
-                    [ class "add"
+                    [ class "button-add"
                     , onClick (AddItem [ 0 ])
-                    , style "cursor" "pointer"
                     ]
                     [ text "add" ]
 
               else
                 text ""
-            , Html.div [ style "border-top" "2px dashed lightgray", style "padding-top" "5px" ] [ text ("Sum: " ++ String.fromInt (sumTasks model.tasks)) ]
+            , Html.div [ class "sum" ] [ text ("Sum: " ++ String.fromInt (sumTasks model.tasks)) ]
             ]
         ]
     }
@@ -240,22 +239,16 @@ taskView : List Int -> List Item -> Int -> Item -> Html Msg
 taskView path parentTasks index item =
     case item of
         Subtask description days ->
-            Html.li [ style "margin-bottom" "10px" ]
+            Html.li [ class "subtask" ]
                 [ Html.div []
                     [ Html.button
-                        [ style "border" "1px solid black"
-                        , style "width" "21px"
-                        , style "height" "21px"
+                        [ class "button"
                         , onClick (RemoveItem (path ++ [ index, 0 ]))
-                        , style "cursor" "pointer"
                         ]
                         [ text "-" ]
                     , Html.button
-                        [ style "border" "1px solid black"
-                        , style "width" "21px"
-                        , style "height" "21px"
+                        [ class "button"
                         , onClick (AddItem (path ++ [ index, 0 ]))
-                        , style "cursor" "pointer"
                         ]
                         [ text "+" ]
                     , Html.input
@@ -263,25 +256,20 @@ taskView path parentTasks index item =
                         , onInput
                             (UpdateEstimate (path ++ [ index ]))
                         , maxlength 3
-                        , style "border" "0"
-                        , style "font-family" "monospace"
-                        , style "width" "30px"
-                        , style "text-align" "center"
-                        , style "padding" "0"
+                        , class "estimate"
                         ]
                         []
                     , Html.input
                         [ value description
                         , onInput
                             (UpdateDescription (path ++ [ index ]))
-                        , style "border" "0"
+                        , class "description"
                         ]
                         []
                     ]
                 , if List.length parentTasks == index + 1 then
                     Html.button
-                        [ style "margin-top" "10px"
-                        , style "cursor" "pointer"
+                        [ class "button-add"
                         , onClick
                             (AddItem
                                 (path ++ [ index ])
@@ -294,33 +282,20 @@ taskView path parentTasks index item =
                 ]
 
         Task description subtasks ->
-            Html.li [ style "margin-bottom" "20px" ]
+            Html.li [ class "subtask" ]
                 [ Html.div []
                     [ Html.button
-                        [ style "border" "1px solid black"
-                        , style "width" "21px"
-                        , style "height" "21px"
+                        [ class "button"
                         , onClick (RemoveItem (path ++ [ index ]))
-                        , style "cursor" "pointer"
                         ]
                         [ text "-" ]
                     , Html.button
-                        [ style "border" "1px solid black"
-                        , style "width" "21px"
-                        , style "height" "21px"
-                        , style "cursor" "pointer"
+                        [ class "button"
                         , onClick (AddItem (path ++ [ index, 0 ]))
                         ]
                         [ text "+" ]
                     , Html.code
-                        [ style "display" "inline-block"
-                        , style "font-family" "monospace"
-                        , style "width" "20px"
-                        , style "text-align" "center"
-                        , style "background-color" "lightgray"
-                        , style "border-radius" "100%"
-                        , style "cursor" "default"
-                        , style "margin" "0 5px"
+                        [ class "sum-subtasks"
                         ]
                         [ text <| String.fromInt <| sumTasks subtasks ]
                     , Html.input
@@ -329,14 +304,12 @@ taskView path parentTasks index item =
                             (UpdateDescription
                                 (path ++ [ index ])
                             )
-                        , style "border" "0"
+                        , class "description"
                         ]
                         []
                     ]
                 , Html.ul
-                    [ style "list-style" "none"
-                    , style "margin-top" "10px"
-                    , style "padding-left" "22px"
+                    [ class "ul"
                     ]
                   <|
                     List.indexedMap
@@ -347,7 +320,7 @@ taskView path parentTasks index item =
                         [ class "add"
                         , onClick
                             (AddItem (path ++ [ index ]))
-                        , style "cursor" "pointer"
+                        , class "button-add"
                         ]
                         [ text "add" ]
 
