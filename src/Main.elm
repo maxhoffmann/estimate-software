@@ -98,14 +98,23 @@ removeItem path tasks =
                     case item of
                         Task oldDescription subtasks ->
                             if List.length restOfPath > 0 then
-                                setAt index
-                                    (Task oldDescription
-                                        (removeItem
-                                            restOfPath
-                                            subtasks
+                                -- convert Task to Subtask if last subtask is deleted
+                                if List.length restOfPath == 2 && List.length subtasks == 1 then
+                                    setAt index
+                                        (Subtask oldDescription
+                                            (sumTasks subtasks)
                                         )
-                                    )
-                                    tasks
+                                        tasks
+
+                                else
+                                    setAt index
+                                        (Task oldDescription
+                                            (removeItem
+                                                restOfPath
+                                                subtasks
+                                            )
+                                        )
+                                        tasks
 
                             else
                                 setAt index (Subtask oldDescription (sumTasks subtasks)) tasks
