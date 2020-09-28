@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, maxlength, value)
+import Html.Attributes exposing (class, classList, maxlength, value)
 import Html.Events exposing (onClick, onInput)
 import List.Extra exposing (getAt, removeAt, setAt)
 
@@ -13,7 +13,12 @@ import List.Extra exposing (getAt, removeAt, setAt)
 
 type alias Model =
     { tasks : List Item
+    , selectedTask : Path
     }
+
+
+type alias Path =
+    List Int
 
 
 type Item
@@ -25,6 +30,7 @@ init : flags -> ( Model, Cmd Msg )
 init _ =
     ( { tasks =
             [ Subtask "description" 1 ]
+      , selectedTask = [ 0 ]
       }
     , Cmd.none
     )
@@ -35,10 +41,10 @@ init _ =
 
 
 type Msg
-    = AddItem (List Int)
-    | RemoveItem (List Int)
-    | UpdateDescription (List Int) String
-    | UpdateEstimate (List Int) String
+    = AddItem Path
+    | RemoveItem Path
+    | UpdateDescription Path String
+    | UpdateEstimate Path String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -57,7 +63,7 @@ update msg model =
             ( { model | tasks = updateEstimate path string model.tasks }, Cmd.none )
 
 
-addItem : List Int -> List Item -> List Item
+addItem : Path -> List Item -> List Item
 addItem path tasks =
     case path of
         index :: restOfPath ->
@@ -85,7 +91,7 @@ addItem path tasks =
             tasks
 
 
-removeItem : List Int -> List Item -> List Item
+removeItem : Path -> List Item -> List Item
 removeItem path tasks =
     case path of
         index :: restOfPath ->
@@ -145,7 +151,7 @@ removeItem path tasks =
             tasks
 
 
-updateDescription : List Int -> String -> List Item -> List Item
+updateDescription : Path -> String -> List Item -> List Item
 updateDescription path description tasks =
     case path of
         index :: restOfPath ->
@@ -181,7 +187,7 @@ updateDescription path description tasks =
             tasks
 
 
-updateEstimate : List Int -> String -> List Item -> List Item
+updateEstimate : Path -> String -> List Item -> List Item
 updateEstimate path estimate tasks =
     case path of
         index :: restOfPath ->
@@ -234,7 +240,7 @@ view model =
         [ Html.main_ [ class "main" ]
             [ Html.ul [ class "top-level" ] <|
                 (model.tasks
-                    |> List.indexedMap (taskView [] model.tasks)
+                    |> List.indexedMap (taskView model.selectedTask [] model.tasks)
                 )
             , if List.length model.tasks == 0 then
                 Html.button
@@ -251,34 +257,40 @@ view model =
     }
 
 
-taskView : List Int -> List Item -> Int -> Item -> Html Msg
-taskView path parentTasks index item =
+taskView : Path -> Path -> List Item -> Int -> Item -> Html Msg
+taskView selectedPath path parentTasks index item =
+    let
+        currentPath =
+            path ++ [ index ]
+    in
     case item of
         Subtask description days ->
-            Html.li [ class "subtask" ]
-                [ Html.div []
+            Html.li [ classList [ ( "item", True ) ] ]
+                [ Html.div [ classList [ ( "item--active", currentPath == selectedPath ) ] ]
                     [ Html.button
                         [ class "button"
-                        , onClick (RemoveItem (path ++ [ index, 0 ]))
+                        , onClick
+                            (RemoveItem
+                                (currentPath ++ [ 0 ])
+                            )
                         ]
                         [ text "-" ]
                     , Html.button
                         [ class "button"
-                        , onClick (AddItem (path ++ [ index, 0 ]))
+                        , onClick (AddItem (currentPath ++ [ 0 ]))
                         ]
                         [ text "+" ]
                     , Html.input
                         [ value (String.fromInt days)
                         , onInput
-                            (UpdateEstimate (path ++ [ index ]))
+                            (UpdateEstimate currentPath)
                         , maxlength 3
                         , class "estimate"
                         ]
                         []
                     , Html.input
                         [ value description
-                        , onInput
-                            (UpdateDescription (path ++ [ index ]))
+                        , onInput (UpdateDescription currentPath)
                         , class "description"
                         ]
                         []
@@ -286,10 +298,7 @@ taskView path parentTasks index item =
                 , if List.length parentTasks == index + 1 then
                     Html.button
                         [ class "button-add"
-                        , onClick
-                            (AddItem
-                                (path ++ [ index ])
-                            )
+                        , onClick (AddItem currentPath)
                         ]
                         [ text "add" ]
 
@@ -298,16 +307,16 @@ taskView path parentTasks index item =
                 ]
 
         Task description subtasks ->
-            Html.li [ class "subtask" ]
-                [ Html.div []
+            Html.li [ classList [ ( "item", True ) ] ]
+                [ Html.div [ classList [ ( "item--active", currentPath == selectedPath ) ] ]
                     [ Html.button
                         [ class "button"
-                        , onClick (RemoveItem (path ++ [ index ]))
+                        , onClick (RemoveItem currentPath)
                         ]
                         [ text "-" ]
                     , Html.button
                         [ class "button"
-                        , onClick (AddItem (path ++ [ index, 0 ]))
+                        , onClick (AddItem (currentPath ++ [ 0 ]))
                         ]
                         [ text "+" ]
                     , Html.code
@@ -316,10 +325,7 @@ taskView path parentTasks index item =
                         [ text <| String.fromInt <| sumTasks subtasks ]
                     , Html.input
                         [ value description
-                        , onInput
-                            (UpdateDescription
-                                (path ++ [ index ])
-                            )
+                        , onInput (UpdateDescription currentPath)
                         , class "description"
                         ]
                         []
@@ -329,13 +335,13 @@ taskView path parentTasks index item =
                     ]
                   <|
                     List.indexedMap
-                        (taskView (path ++ [ index ]) subtasks)
+                        (taskView selectedPath currentPath subtasks)
                         subtasks
                 , if List.length parentTasks == index + 1 then
                     Html.button
                         [ class "add"
                         , onClick
-                            (AddItem (path ++ [ index ]))
+                            (AddItem currentPath)
                         , class "button-add"
                         ]
                         [ text "add" ]

@@ -35,8 +35,12 @@
   border: 0;
 }
 
-.subtask {
+.item {
   margin-bottom: 10px;
+}
+
+.item--active {
+  outline: 2px solid red;
 }
 
 .sum-subtasks {
